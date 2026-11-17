@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#e8e9ec">
+<title>จดด่วน</title>
+<link rel="icon" href="icon-quick-192.png">
+<link rel="apple-touch-icon" href="icon-quick-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="จดด่วน">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e8e9ec; --surface:#f1f2f4; --sh-dark:#c6cad1; --sh-light:#FFFFFF;
+    --ink:#1c1e22; --ink-soft:#8b919b; --urgent-deep:#1c1e22;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);color:var(--ink);font-family:'Prompt',sans-serif;font-weight:300;
+    min-height:100vh;-webkit-tap-highlight-color:transparent;
+  }
+  .q{max-width:460px;margin:0 auto;padding:22px 20px 40px;display:flex;flex-direction:column;align-items:center;min-height:100vh;}
+  .q-top{width:100%;display:flex;justify-content:space-between;align-items:center;}
+  .q-title{font-weight:600;font-size:1.25rem;}
+  .q-open{color:var(--ink-soft);font-size:.85rem;text-decoration:none;font-weight:400;}
+  .q-status{margin:26px 0 18px;text-align:center;font-size:.95rem;min-height:2.6em;line-height:1.45;color:var(--ink);}
+  .q-mic{
+    width:132px;height:132px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;
+    box-shadow:10px 10px 20px var(--sh-dark), -10px -10px 20px var(--sh-light);
+  }
+  .q-mic svg{width:56px;height:56px;}
+  .q-mic.on{background:var(--urgent-deep);color:#fff;animation:pulse 1.2s infinite;}
+  .q-mic.off{opacity:.45}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(28,30,34,.45);}70%{box-shadow:0 0 0 28px rgba(28,30,34,0);}100%{box-shadow:0 0 0 0 rgba(28,30,34,0);}}
+  .q-type{width:100%;margin-top:22px;display:flex;gap:10px;}
+  .q-type input{
+    flex:1;min-width:0;border:none;border-radius:18px;padding:13px 16px;font-family:'Prompt',sans-serif;font-size:.95rem;color:var(--ink);
+    background:var(--surface);box-shadow:inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);outline:0;
+  }
+  .q-heard{
+    width:100%;margin-top:16px;min-height:3.2em;padding:12px 16px;border-radius:18px;font-size:.92rem;line-height:1.5;
+    background:var(--surface);color:var(--ink);word-break:break-word;
+    box-shadow:inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+  }
+  .q-heard:empty::before{content:'ข้อความที่ได้ยินจะขึ้นที่นี่';color:var(--ink-soft);}
+  .q-result{width:100%;margin-top:18px;}
+  .q-item{
+    display:flex;gap:10px;align-items:flex-start;padding:11px 14px;margin-bottom:10px;border-radius:16px;
+    background:var(--surface);font-size:.92rem;line-height:1.4;word-break:break-word;
+    box-shadow:5px 5px 10px var(--sh-dark), -5px -5px 10px var(--sh-light);
+  }
+  .q-tag{flex:none;font-size:.7rem;font-weight:500;padding:3px 9px;border-radius:10px;color:var(--ink);
+    box-shadow:inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light);white-space:nowrap;}
+  .q-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
+  .q-btn{
+    border:none;border-radius:16px;padding:10px 18px;font-family:'Prompt',sans-serif;font-size:.85rem;font-weight:500;
+    color:var(--ink);background:var(--surface);cursor:pointer;text-decoration:none;
+    box-shadow:5px 5px 10px var(--sh-dark), -5px -5px 10px var(--sh-light);
+  }
+  .q-btn:active{box-shadow:inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);}
+  .q-hint{margin-top:26px;font-size:.74rem;color:var(--ink-soft);line-height:1.6;text-align:center;}
+</style>
+</head>
+<body>
+<div class="q">
+  <div class="q-top">
+    <div class="q-title">⚡ จดด่วน <span style="font-size:.7rem;font-weight:400;color:var(--ink-soft)">Pocket 2</span></div>
+    <a class="q-open" href="index.html">เปิดแอป ›</a>
+  </div>
+  <div class="q-status" id="qStatus">กำลังโหลด...</div>
+  <button class="q-mic" id="qMic" aria-label="เริ่มพูด"></button>
+  <form class="q-type" id="qForm" autocomplete="off">
+    <input id="qText" placeholder="พิมพ์ หรือกดไมค์บนคีย์บอร์ด เช่น BTS 47 บาท" enterkeyhint="done">
+    <button class="q-btn" type="submit">บันทึก</button>
+  </form>
+  <div class="q-heard" id="qHeard"></div>
+  <div class="q-result" id="qResult"></div>
+  <div class="q-actions">
+    <button class="q-btn" id="qUndo" style="display:none;">↩ ยกเลิกที่เพิ่งบันทึก</button>
+    <button class="q-btn" id="qRetry" style="display:none;">ลองบันทึกอีกครั้ง</button>
+    <a class="q-btn" id="qLogin" href="index.html" style="display:none;">เข้าสู่ระบบในแอป</a>
+  </div>
+  <div class="q-hint">รายจ่าย: “BTS เช้า 47 บาท” · “ข้าวเที่ยง 60 ต่อไป กาแฟ 55”<br>รายรับ: “เงินเดือน 25000 บาท” · “รายรับเพิ่ม ขายของ 500 บาท”<br>รายการ Fix: พูดชื่อรายการ เช่น “ค่าเน็ต 700 บาท”<br>ทุกอย่างลงวันนี้ ถ้าพลาดกด ↩ ยกเลิกได้ทันที</div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===================== แปลงเสียง/ข้อความ → เงิน ===================== */
+const UNITS = 'ด้าม|แท่ง|อัน|ชิ้น|กล่อง|ขวด|แพ็ค|แพค|แพ็ก|ห่อ|ถุง|ใบ|เล่ม|แผ่น|ลูก|ตัว|คู่|ชุด|โหล|กระป๋อง|ถัง|กิโลกรัม|กิโล|กก\\.?|กรัม|ลิตร|ซอง|หลอด|ม้วน|เส้น|คัน|หัว|ฟอง|แก้ว|จาน|ชาม|ถ้วย|เม็ด|มัด|ก้อน|ที่|คน|วัน|ครั้ง|รอบ|โมง|นาฬิกา|นาที|ชั่วโมง|pcs';
+const TH_DIG = {'ศูนย์':0,'หนึ่ง':1,'เอ็ด':1,'สอง':2,'ยี่':2,'สาม':3,'สี่':4,'ห้า':5,'หก':6,'เจ็ด':7,'แปด':8,'เก้า':9};
+const TH_UNIT = {'สิบ':10,'ร้อย':100,'พัน':1000,'หมื่น':10000,'แสน':100000};
+const TH_RUN = '(?:ศูนย์|หนึ่ง|เอ็ด|สอง|ยี่|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า|สิบ|ร้อย|พัน|หมื่น|แสน)+';
+function thWordsToNum(w){
+  let total=0, cur=0;
+  for(const t of w.match(new RegExp(TH_RUN.slice(3,-2),'g'))||[]){
+    if(t in TH_DIG) cur = TH_DIG[t];
+    else { if(cur===0 && t==='สิบ') cur=1; total += (cur||1)*TH_UNIT[t]; cur=0; }
+  }
+  return total+cur;
+}
+function moneyNormalize(s){
+  return String(s||'').replace(/[๐-๙]/g, d=> String('๐๑๒๓๔๕๖๗๘๙'.indexOf(d)))
+    .replace(/[“”"]/g,'')
+    .replace(/(\d),(\d{3})/g,'$1$2')
+    .replace(new RegExp('('+TH_RUN+')(?=\\s*(?:บาท|$))','g'), m=>' '+thWordsToNum(m)+' ')
+    .replace(/([ก-๙a-z])(\d)/gi,'$1 $2').replace(/(\d)([ก-๙])/g,'$1 $2')
+    .replace(/\s+/g,' ').trim();
+}
+function findMoney(s){
+  const re = /(\d+(?:\.\d+)?)\s*(บาท(?:ถ้วน)?)?/g, unitRe = new RegExp('^\\s*(?:'+UNITS+')');
+  let m, withBaht=null, last=null;
+  while((m = re.exec(s))){
+    if(s[m.index-1]==='-' || s[m.index+m[1].length]==='-') continue;          // 7-11
+    if(!m[2] && unitRe.test(s.slice(m.index+m[0].length))) continue;        // 2 จาน
+    const hit = {n:parseFloat(m[1]), baht:!!m[2]};
+    if(m[2]) withBaht = hit; last = hit;
+  }
+  return withBaht || last;
+}
+/* แยกประโยค: คำเชื่อม หรือหลังจำนวนเงินแต่ละก้อน */
+function splitSegs(text){
+  const s = moneyNormalize(text);
+  const unitRe = new RegExp('^(?:'+UNITS+')');
+  const parts = s.split(/\s*(?:[,;，\n]|ต่อไป|ถัดไป|แล้วก็|และก็|อีกอย่าง|จากนั้น)\s*/).filter(x=>x.trim());
+  const out = [];
+  for(const p of parts){
+    let buf = '';
+    const toks = p.split(' ');
+    toks.forEach((t,i)=>{
+      buf += (buf?' ':'') + t;
+      const nx = toks[i+1];
+      const isNum = /^\d+(?:\.\d+)?$/.test(t), isBaht = /^บาท(?:ถ้วน)?$/.test(t);
+      if(nx===undefined) return;
+      const hasText = /[^\d\s.]/.test(buf.replace(/บาท(?:ถ้วน)?/g,''));
+      if(hasText && (isBaht || (isNum && !/^บาท/.test(nx) && !unitRe.test(nx) && /^\D/.test(nx)))){
+        out.push(buf); buf='';
+      }
+    });
+    if(buf) out.push(buf);
+  }
+  return out.map(x=>x.trim()).filter(Boolean);
+}
+const INCOME_RE = /(?:รายรับ|รายได้|ได้เงิน|ได้รับ|รับเงิน|รับโอน|^\s*รับ|เงินเข้า|โอนเข้า|เข้าบัญชี|เงินเดือน|ค่าจ้าง|โบนัส|ขายได้|ขายของ|เงินคืน|คืนเงิน|income|salary)/i;
+const MAIN_RE = /เงินเดือน|salary|ค่าจ้าง/i;
+const DAILY = [
+  ['Express','Express',  /express|เอ็กซ์?เพรส|ทางด่วน/i],
+  ['Travel','ค่าเดินทาง', /bts|mrt|บี\s*ที\s*เอส|เอ็ม\s*อาร์\s*ที|รถไฟฟ้า|ใต้ดิน|รถไฟ|วิน|มอ\s*ไซ|มอเตอร์ไซ|รถตู้|แท็กซี่|taxi|grab|แกร็บ|bolt|โบลท์|รถเมล์|รถเมย์|เรือ|น้ำมัน|ปั๊ม|ค่ารถ|เดินทาง|จอดรถ|ค่าทางด่วน/i],
+  ['Breakfast','Breakfast',/อาหารเช้า|ข้าวเช้า|มื้อเช้า|breakfast/i],
+  ['Lunch','Lunch',      /เที่ยง|กลางวัน|lunch/i],
+  ['Dinner','Dinner',    /ข้าวเย็น|มื้อเย็น|มื้อค่ำ|อาหารเย็น|dinner/i],
+  ['MEAL','',            /ชาบู|หมูกระทะ|บุฟเฟ่|ปิ้งย่าง|สุกี้/i],
+  ['Snack','Snack',      /ขนม|กาแฟ|ชานม|ชาเย็น|ชาไทย|ชาเขียว|ไอติม|ไอศกรีม|snack|เบเกอรี่|เค้ก|ผลไม้|เครื่องดื่ม|โกโก้|นมเย็น|น้ำปั่น|สมูทตี้|คาเฟ่|ขนมปัง/i],
+  ['MEAL','',            /ข้าว|ก๋วยเตี๋ยว|อาหาร|มื้อ|ส้มตำ|กิน|ผัด|แกง|บะหมี่|ราเมง|ซูชิ|พิซซ่า|ไก่ทอด|kfc|mcdonald|แมค/i],
+  ['Buying','Buying',    /ซื้อ|เซเว่น|7\s*-?\s*11|7\s*-?\s*eleven|โลตัส|lotus|บิ๊ก\s*ซี|big\s*c|ท็อปส์|tops|แม็คโคร|makro|ช้อปปี้|shopee|ลาซาด้า|lazada|ตลาด|ห้าง/i]
+];
+const LBL = {Travel:'ค่าเดินทาง',Express:'Express',Breakfast:'Breakfast',Lunch:'Lunch',Dinner:'Dinner',Snack:'Snack',Buying:'Buying',Other:'Other'};
+function dailySlot(t){
+  const h = new Date().getHours() + new Date().getMinutes()/60;
+  for(const [k,,re] of DAILY) if(re.test(t)){
+    if(k==='MEAL') return h<10.5 ? 'Breakfast' : h<16 ? 'Lunch' : 'Dinner';
+    return k;
+  }
+  return 'Other';
+}
+const compact = s => String(s).toLowerCase().replace(/[\s.,;:!?'"“”()\-–_/]+/g,'');
+/* ค้นชื่อรายการ Fix ที่พูดถึง (ชื่อยาวสุดก่อน) */
+function fixMatch(t){
+  const ct = compact(t).replace(/^(?:จ่าย|ค่า)/,'');
+  let best=null;
+  for(const f of FIX){
+    const cf = compact(f.n), cf2 = cf.replace(/^ค่า/,'');
+    if(cf2.length>=2 && (compact(t).includes(cf) || ct.includes(cf2)) && (!best || cf.length>compact(best.n).length)) best=f;
+  }
+  return best;
+}
+
+/* ===================== Firebase ===================== */
+const $ = id => document.getElementById(id);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" stroke="none"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8.5" y1="22" x2="15.5" y2="22"/></svg>';
+let ref = null, U = null, FIX = [], rec = null, listening = false, lastSaved = [], pending = null, sessionItems = [];
+const p2 = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const fmt = n => (+n||0).toLocaleString('en-US');
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function newId(){ return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6); }
+function setStatus(t){ $('qStatus').textContent = t; }
+
+function loadFix(snap){
+  const d = snap && snap.exists ? snap.data() : {}, M = ymd(new Date()).slice(0,7), mi = new Date().getMonth()+1;
+  const live = x => x && (!x.from || M>=x.from) && (!x.del || M<x.del);
+  FIX = [];
+  Object.entries(d.fix||{}).forEach(([id,x])=>{ if(live(x) && x.n) FIX.push({k:'f:'+id, n:x.n}); });
+  Object.entries(d.yfix||{}).forEach(([id,x])=>{ if(live(x) && x.n && +x.mo===mi) FIX.push({k:'y:'+id, n:x.n}); });
+}
+function boot(){
+  const cfg = window.FB_CFG;
+  if(!cfg || !cfg.apiKey || /ใส่|YOUR|xxx/i.test(cfg.apiKey)){ setStatus('ผู้ดูแลยังไม่ได้ใส่ค่า Firebase ในไฟล์ firebase-config.js'); return; }
+  if(!window.firebase || !firebase.auth){ setStatus('โหลดระบบไม่ได้ (ต้องมีอินเทอร์เน็ต)'); return; }
+  firebase.initializeApp(cfg);
+  const fs = firebase.firestore();
+  try{ fs.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+  firebase.auth().onAuthStateChanged(u=>{
+    U = u;
+    if(!u){ ref = null; setStatus('ยังไม่ได้เข้าสู่ระบบ — เปิดแอปเพื่อเข้าสู่ระบบก่อน'); $('qLogin').style.display=''; return; }
+    $('qLogin').style.display='none';
+    ref = fs.doc('users/'+u.uid);
+    ref.get({source:'cache'}).then(loadFix).catch(()=>{}).finally(()=>ref.get().then(loadFix).catch(()=>{}));
+    if(SR){
+      setStatus('กำลังเตรียมไมค์...');
+      setTimeout(()=> startListening(true), 250);
+      setTimeout(()=>{ if(!listening && /กำลังเตรียม/.test($('qStatus').textContent)) setStatus('แตะไมค์เพื่อเริ่มพูด หรือพิมพ์ด้านล่าง'); }, 1800);
+    }else{
+      $('qMic').classList.add('off');
+      setStatus('พิมพ์รายการด้านล่าง หรือกดไมค์บนคีย์บอร์ดแล้วพูด');
+    }
+  });
+}
+
+/* ===================== ไมค์ ===================== */
+function micUI(on){ $('qMic').classList.toggle('on', on); $('qMic').setAttribute('aria-label', on ? 'หยุดฟัง' : 'เริ่มพูด'); }
+function startListening(auto){
+  if(!SR){ setStatus('เครื่องนี้ใช้ปุ่มไมค์ในแอปไม่ได้ — ให้พิมพ์ หรือกดไมค์บนคีย์บอร์ดแทน'); $('qText').focus(); return; }
+  if(!ref){ setStatus('ยังไม่ได้เข้าสู่ระบบ — เปิดแอปเพื่อเข้าสู่ระบบก่อน'); return; }
+  if(listening) return;
+  $('qHeard').textContent = '';
+  $('qRetry').style.display = 'none';
+  let heard = '', failed = false;
+  const r = new SR();
+  rec = r;
+  r.lang = 'th-TH'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  r.onstart = ()=>{ listening = true; micUI(true); setStatus('กำลังฟัง... พูดได้เลย'); };
+  r.onresult = (e)=>{
+    let t = '';
+    for(let i=0;i<e.results.length;i++) t += e.results[i][0].transcript + ' ';
+    heard = t.trim();
+    $('qHeard').textContent = heard;
+  };
+  r.onerror = (e)=>{
+    if(e.error === 'aborted') return;
+    failed = true;
+    const perm = auto
+      ? 'เริ่มฟังเองไม่ได้ — แตะปุ่มไมค์เพื่อเริ่มพูด หรือพิมพ์ด้านล่าง'
+      : 'ยังไม่ได้อนุญาตไมโครโฟน — เปิดสิทธิ์ไมโครโฟนให้เบราว์เซอร์ (การตั้งค่าไซต์) แล้วลองใหม่ หรือพิมพ์แทน';
+    const m = {
+      'not-allowed': perm, 'service-not-allowed': perm,
+      'no-speech': 'ไม่ได้ยินเสียง แตะไมค์แล้วพูดอีกครั้ง',
+      'audio-capture': 'ไม่พบไมโครโฟนในเครื่อง',
+      'network': 'ต้องต่ออินเทอร์เน็ตเพื่อแปลงเสียงเป็นข้อความ'
+    };
+    setStatus(m[e.error] || ('ฟังไม่สำเร็จ (' + e.error + ') ลองอีกครั้ง หรือพิมพ์แทน'));
+  };
+  r.onend = ()=>{
+    listening = false; micUI(false);
+    if(failed) return;
+    if(!heard){ setStatus('ไม่ได้ยินอะไร แตะไมค์แล้วพูดอีกครั้ง'); return; }
+    saveText(heard);
+  };
+  try{ r.start(); }
+  catch(err){ setStatus('เริ่มฟังไม่ได้ แตะไมค์อีกครั้ง'); }
+}
+
+/* ===================== บันทึก ===================== */
+function renderResult(){
+  $('qResult').innerHTML = sessionItems.slice().reverse().map(it =>
+    '<div class="q-item"><span class="q-tag">' + esc(it.label) + '</span><span>' + esc(it.text) + '</span></div>').join('');
+}
+function writeOps(ops){
+  setStatus('กำลังบันทึก...');
+  $('qRetry').style.display = 'none';
+  let fin = false;
+  const slow = setTimeout(()=>{ if(!fin) setStatus('ยังรอส่งขึ้นระบบ (เน็ตช้า/ออฟไลน์) — ข้อมูลถูกเก็บไว้ในเครื่องแล้ว จะส่งให้เมื่อมีเน็ต'); }, 8000);
+  Promise.allSettled(ops.filter(o=>!o.done).map(o => o.run().then(()=>{ o.done = true; })))
+    .then(res=>{
+      fin = true; clearTimeout(slow);
+      const bad = res.find(r=>r.status==='rejected');
+      if(!bad){
+        lastSaved = ops; pending = null;
+        setStatus('บันทึกแล้ว ✓  ' + ops.length + ' รายการ');
+        $('qUndo').style.display = '';
+      }else{
+        pending = ops;
+        const e = bad.reason;
+        setStatus('บันทึกไม่สำเร็จบางรายการ: ' + (e && e.code==='permission-denied' ? 'ไม่มีสิทธิ์ (ลองออกแล้วเข้าสู่ระบบใหม่)' : e && e.message ? e.message : 'ตรวจสอบอินเทอร์เน็ต'));
+        $('qRetry').style.display = '';
+      }
+    });
+}
+function saveText(text){
+  if(!ref){ setStatus('ยังไม่ได้เข้าสู่ระบบ — เปิดแอปเพื่อเข้าสู่ระบบก่อน'); $('qLogin').style.display=''; return; }
+  const date = ymd(new Date()), M = date.slice(0,7);
+  const inc = n => firebase.firestore.FieldValue.increment(n);
+  const ops = [], skipped = [];
+  for(const seg of splitSegs(text)){
+    const m = findMoney(seg);
+    if(!m || !(m.n>0)){ skipped.push(seg); continue; }
+    const n = m.n, id = newId();
+    if(INCOME_RE.test(seg)){
+      const k = MAIN_RE.test(seg) ? 'main' : 'extra';
+      ops.push({label:'💰 '+(k==='main'?'รายรับ':'รายรับเพิ่มเติม'), text:seg+'  +'+fmt(n)+' ฿', id,
+        run:()=>ref.set({m:{[M]:{inc:{[k]:inc(n)}}}},{merge:true}), undo:()=>ref.set({m:{[M]:{inc:{[k]:inc(-n)}}}},{merge:true})});
+      continue;
+    }
+    const f = fixMatch(seg);
+    if(f){
+      ops.push({label:'🏠 Fix · '+f.n, text:fmt(n)+' ฿', id,
+        run:()=>ref.set({m:{[M]:{exp:{[f.k]:inc(n)}}}},{merge:true}), undo:()=>ref.set({m:{[M]:{exp:{[f.k]:inc(-n)}}}},{merge:true})});
+      continue;
+    }
+    const k = dailySlot(seg);
+    ops.push({label:'💸 '+LBL[k], text:seg.replace(/\s*\d+(?:\.\d+)?\s*(?:บาท(?:ถ้วน)?)?\s*$/,'')+'  '+fmt(n)+' ฿', id,
+      run:()=>ref.set({d:{[date]:{[k]:inc(n)}}},{merge:true}), undo:()=>ref.set({d:{[date]:{[k]:inc(-n)}}},{merge:true})});
+  }
+  if(!ops.length){ setStatus('ไม่พบจำนวนเงิน ลองพูดใหม่ เช่น “กาแฟ 55 บาท”'); return; }
+  ops.forEach(o => sessionItems.push({label:o.label, text:o.text, id:o.id}));
+  renderResult();
+  $('qUndo').style.display = 'none';
+  writeOps(ops);
+  if(skipped.length) setTimeout(()=>setStatus($('qStatus').textContent+' · ข้ามคำที่ไม่มีจำนวนเงิน: '+skipped.join(', ')), 50);
+}
+
+$('qMic').innerHTML = MIC_SVG;
+$('qMic').addEventListener('click', ()=>{
+  if(listening){ try{ rec.stop(); }catch(e){} }
+  else startListening(false);
+});
+$('qForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const t = $('qText').value.trim(); if(!t) return;
+  $('qHeard').textContent = t; $('qText').value = '';
+  saveText(t);
+});
+$('qRetry').addEventListener('click', ()=>{ if(pending) writeOps(pending); });
+$('qUndo').addEventListener('click', ()=>{
+  if(!Array.isArray(lastSaved) || !lastSaved.length) return;
+  const ids = lastSaved.map(o=>o.id);
+  lastSaved.forEach(o => { try{ o.undo(); }catch(e){} });
+  sessionItems = sessionItems.filter(it => ids.indexOf(it.id) === -1);
+  renderResult();
+  lastSaved = [];
+  $('qUndo').style.display = 'none';
+  setStatus('ยกเลิกแล้ว ✓');
+});
+window.addEventListener('load', boot);
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
