@@ -83,6 +83,7 @@ input[type=date]{border:1px solid #fff;border-radius:999px;padding:8px 12px;back
 .login .btn{width:100%;margin-top:10px;padding:13px;font-size:16px;display:flex;align-items:center;justify-content:center;gap:10px}
 .err{background:#f8d8d1;color:#9c3f30;border-radius:16px;padding:10px 12px;font-size:13px;margin-top:12px;text-align:left}
 .fab{position:fixed;right:max(16px,calc(50% - 344px));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px);width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:26px;text-decoration:none;background:linear-gradient(180deg,#f7dc7a,#e8b93f);box-shadow:0 8px 20px rgba(200,150,30,.45),inset 0 2px 0 rgba(255,255,255,.5);z-index:8}
+.lgt .btn{flex:1;white-space:nowrap;padding:7px 4px}
 details.hw{margin-top:14px;text-align:left;font-size:13px;color:var(--mut)}details.hw summary{cursor:pointer;color:var(--ink);font-weight:600}
 </style>
 </head>
@@ -162,7 +163,13 @@ function authMsg(e){
    'auth/unauthorized-domain':'เว็บนี้ยังไม่ได้อยู่ใน Authorized domains ของ Firebase (ผู้ดูแลต้องเพิ่มโดเมน)',
    'auth/operation-not-allowed':'ยังไม่ได้เปิดวิธีล็อกอินนี้ใน Firebase Authentication',
    'auth/account-exists-with-different-credential':'อีเมลนี้เคยเข้าสู่ระบบด้วยอีกวิธีแล้ว ให้ใช้วิธีเดิม',
-   'auth/network-request-failed':'ต่ออินเทอร์เน็ตไม่ได้ ลองใหม่อีกครั้ง'})[c]??('เข้าสู่ระบบไม่สำเร็จ ('+(c||e.message||e)+')');
+   'auth/network-request-failed':'ต่ออินเทอร์เน็ตไม่ได้ ลองใหม่อีกครั้ง',
+   'auth/invalid-credential':'อีเมลหรือรหัสผ่านไม่ถูกต้อง (ถ้ายังไม่เคยสมัคร ให้กด "สมัครใหม่")',
+   'auth/wrong-password':'รหัสผ่านไม่ถูกต้อง','auth/user-not-found':'ยังไม่มีบัญชีนี้ กด "สมัครใหม่" ก่อน',
+   'auth/email-already-in-use':'อีเมลนี้สมัครไว้แล้ว ให้กด "เข้าสู่ระบบ" แทน (ลืมรหัสกด "ลืมรหัสผ่าน")',
+   'auth/weak-password':'รหัสผ่านต้องมีอย่างน้อย 6 ตัว','auth/invalid-email':'รูปแบบอีเมลไม่ถูกต้อง',
+   'auth/missing-password':'กรุณาใส่รหัสผ่าน','auth/missing-email':'กรุณาใส่อีเมล',
+   'auth/too-many-requests':'ลองผิดหลายครั้งเกินไป รอสักครู่แล้วลองใหม่'})[c]??('เข้าสู่ระบบไม่สำเร็จ ('+(c||e.message||e)+')');
 }
 function login(kind){
   LERR='';render();
@@ -173,6 +180,19 @@ function login(kind){
     if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/web-storage-unsupported'].includes(e.code))return A.signInWithRedirect(p);
     LERR=authMsg(e);render();
   });
+}
+let EMF=0,LOK='';
+function emailAuth(kind){
+  const e=V('lem'),pw=(document.getElementById('lpw')||{}).value||'',A=firebase.auth();
+  LERR='';LOK='';
+  if(!e){LERR='กรุณาใส่อีเมล';render();return}
+  if(kind=='reset'){
+    A.sendPasswordResetEmail(e).then(()=>{LOK='ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่ '+e+' แล้ว (ดูในกล่องจดหมายขยะด้วย)';render()}).catch(x=>{LERR=authMsg(x);render()});
+    return;
+  }
+  if(pw.length<6){LERR='รหัสผ่านต้องมีอย่างน้อย 6 ตัว';render();return}
+  if(kind=='new'&&pw!==((document.getElementById('lpw2')||{}).value||'')){LERR='ยืนยันรหัสผ่านไม่ตรงกัน';render();return}
+  (kind=='new'?A.createUserWithEmailAndPassword(e,pw):A.signInWithEmailAndPassword(e,pw)).catch(x=>{LERR=authMsg(x);render()});
 }
 function logout(){
   if(!confirm('ออกจากระบบ? ข้อมูลยังอยู่บนคลาวด์ เข้าสู่ระบบด้วยบัญชีเดิมเพื่อดูอีกครั้ง'))return;
@@ -664,7 +684,7 @@ function accountHTML(){
   const pv=U&&U.providerData&&U.providerData[0]?U.providerData[0].providerId:'';
   const st={conn:'กำลังเชื่อมต่อ...',ok:'✅ ซิงก์เรียลไทม์'+(SY.last?' (อัปเดตล่าสุด '+SY.last+')':''),wait:'⏳ มีข้อมูลรอส่งขึ้น (ออฟไลน์หรือกำลังส่ง) '+SY.msg,err:'⚠️ '+SY.msg}[SY.s];
   return `<div class="r"><b style="font-size:18px">👤 บัญชี & ซิงก์</b><button class="btn" onclick="AM(0)">ปิด</button></div>
-  <div class="in"><div class="r"><span><b>${esc(U&&(U.displayName||U.email)||'')}</b><br><span class="mut">${esc(U&&U.email||'')} · ${pv=='google.com'?'Google':pv=='microsoft.com'?'Hotmail / Outlook':pv}</span></span></div>
+  <div class="in"><div class="r"><span><b>${esc(U&&(U.displayName||U.email)||'')}</b><br><span class="mut">${esc(U&&U.email||'')} · ${pv=='google.com'?'Google':pv=='password'?'อีเมล + รหัสผ่าน':pv}</span></span></div>
   <div class="mut">${st}</div></div>
   <div class="mut">ข้อมูลของบัญชีนี้เก็บแยกเฉพาะคุณ เข้าจากเครื่องไหนด้วยบัญชีเดียวกันก็เห็นข้อมูลเดียวกัน</div>
   <button class="btn" style="width:100%;margin-top:10px" onclick="XL()">📊 ส่งออกเป็นไฟล์ Excel</button>
@@ -691,7 +711,15 @@ function loginHTML(){
    noload:'<div class="err">โหลดระบบล็อกอินไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วเปิดใหม่ '+esc(LERR)+'</div>'}[AUTH];
   return `<div class="card login"><img src="icon-512.png" alt=""><h2 style="margin:14px 0 4px">My Pocket 2</h2><div class="mut">จดรายรับ รายจ่าย ซิงก์ทุกเครื่อง ข้อมูลแยกตามบัญชีของคุณ</div>
   ${AUTH=='out'?`<button class="btn" style="margin-top:18px" onclick="login('g')"><b style="color:#4285f4">G</b> เข้าสู่ระบบด้วย Google</button>
-  <button class="btn" onclick="login('m')"><b style="color:#0078d4">⊞</b> เข้าสู่ระบบด้วย Hotmail / Outlook</button>`:msg||''}
+  <button class="btn" onclick="EMF=EMF?0:1;LERR='';LOK='';render()">✉️ เข้าสู่ระบบด้วยอีเมล (Hotmail ฯลฯ)</button>
+  ${EMF?`<div class="in" style="text-align:left;margin-top:12px">
+   <div class="r lgt" style="justify-content:center;gap:6px"><button class="btn s ${EMF==1?'y':''}" onclick="EMF=1;LERR='';LOK='';render()">เข้าสู่ระบบ</button><button class="btn s ${EMF==2?'y':''}" onclick="EMF=2;LERR='';LOK='';render()">สมัครใหม่</button><button class="btn s ${EMF==3?'y':''}" onclick="EMF=3;LERR='';LOK='';render()">ลืมรหัสผ่าน</button></div>
+   <input class="t" id="lem" type="email" autocomplete="email" placeholder="อีเมล เช่น name@hotmail.com" style="width:100%;margin-top:8px">
+   ${EMF!=3?`<input class="t" id="lpw" type="password" autocomplete="${EMF==2?'new-password':'current-password'}" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)" style="width:100%;margin-top:8px">`:''}
+   ${EMF==2?`<input class="t" id="lpw2" type="password" autocomplete="new-password" placeholder="ยืนยันรหัสผ่านอีกครั้ง" style="width:100%;margin-top:8px">`:''}
+   <button class="btn p" onclick="emailAuth('${['','in','new','reset'][EMF]}')">${['','เข้าสู่ระบบ','สมัครและเข้าสู่ระบบ','ส่งลิงก์ตั้งรหัสผ่านใหม่'][EMF]}</button>
+   <div class="mut" style="margin-top:6px">${EMF==2?'ครั้งแรกให้สมัครด้วยอีเมลของคุณ แล้วตั้งรหัสผ่านใหม่สำหรับแอปนี้ (ไม่ใช่รหัส Hotmail)':EMF==3?'ระบบจะส่งลิงก์ไปที่อีเมล กดลิงก์แล้วตั้งรหัสใหม่':'ใช้อีเมลและรหัสผ่านที่สมัครไว้กับแอปนี้'}</div></div>`:''}`:msg||''}
+  ${LOK&&AUTH=='out'?`<div class="err" style="background:#d3ebe2;color:#2c7a64">${esc(LOK)}</div>`:''}
   ${LERR&&AUTH=='out'?`<div class="err">${esc(LERR)}</div>`:''}
   ${installHelp()}</div>`;
 }
