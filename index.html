@@ -443,6 +443,9 @@ const debtForm=p=>`<div class="frm"><div class="w2"><label>ชื่อธนา
  <div class="w2 r"><span class="mut">เหลือใช้ได้ (คำนวณให้)</span><b id="${p}dr">0.00</b></div>
  <button class="btn p w2" onclick="ADB('${p}')">＋ เพิ่มหนี้</button></div>`;
 
+/* รอบกู้ปัจจุบัน: 25 ของเดือนนี้ (หรือเดือนก่อนถ้ายังไม่ถึงวันที่ 25) ถึง 24 ของเดือนถัดไป · ไม่ขึ้นกับเดือนที่เลื่อนดู */
+const dcS=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth()-(n.getDate()>=25?0:1),25)})(),dcE=new Date(dcS.getFullYear(),dcS.getMonth()+1,24);
+const dcLab=()=>dcS.getDate()+' '+dcS.toLocaleDateString('th-TH',{month:'short'})+' – '+dcE.getDate()+' '+dcE.toLocaleDateString('th-TH',{month:'short'})+' '+(dcE.getFullYear()+543);
 /* ---------- แท็บ Overview ---------- */
 function ov(){
   const M=ym(cur),m=mo(M),inc=incTot(M),ex=expTot(M),left=inc-ex;
@@ -500,7 +503,7 @@ function ov(){
   h+=band('bo',o);
 
   /* กลุ่ม 4: Debt */
-  let dh='',allUsed=0,allAdd=0;const td=ymd(new Date()),pa=ymd(pStart(M)),pb=ymd(pEnd(M)),dSm=[];
+  let dh='',allUsed=0,allAdd=0;const td=ymd(new Date()),pa=ymd(dcS),pb=ymd(dcE),dSm=[];
   byTs(D.debts).forEach(([a,x])=>{
     const c=debtCalc(a,x),pc=c.lim>0?Math.round(c.used/c.lim*100):0;allUsed+=c.used;
     const addC=c.L.filter(e=>e.t=='add'&&e.date>=pa&&e.date<=pb).reduce((s,e)=>s+(+e.v||0),0);allAdd+=addC;dSm.push([x.n,addC]);
@@ -511,7 +514,7 @@ function ov(){
     <div class="r"><span class="nw">วงเงินเต็ม</span><span class="dbn">${fmt2(c.lim)}</span></div>
     <div class="r"><span class="nw"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:#e0897a"></i> ใช้ไปแล้ว</span><span class="dbn" style="color:#c0584a">${fmt2(c.used)}</span></div>
     <div class="r"><span class="nw"><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:#5f9c8e"></i> เหลือใช้ได้</span><span class="dbn" style="color:#2c7a64;font-size:16px">${fmt2(c.rem)}</span></div></div></div>
-    <div class="r"><span class="mut">📥 กู้เพิ่มเดือนนี้</span><b style="color:#c0584a">+${fmt2(addC)}</b></div>
+    <div class="r"><span class="mut">📥 กู้เพิ่มรอบนี้ (25–24)</span><b style="color:#c0584a">+${fmt2(addC)}</b></div>
     <div class="r" style="justify-content:flex-end;gap:14px;flex-wrap:wrap"><a class="ed" onclick="ED('${a}','lim')">แก้วงเงินเต็ม</a><a class="ed" onclick="ED('${a}','used0')">ตั้งยอดใช้ไปแล้วตั้งต้น</a><a class="ed" style="color:#b0503f" onclick="DX('${a}')">ลบหนี้นี้</a></div><div class="dv"></div>
     <div class="r"><input class="n" id="x${a}" type="number" inputmode="decimal" placeholder="ระบุจำนวนเงิน" style="flex:1;min-width:0;width:auto;border-radius:14px;padding:12px"><button class="btn p" style="flex:none;white-space:nowrap;border-radius:14px;padding:12px 16px" onclick="DB('${a}','pay')">จ่ายเพิ่ม</button></div>
     <button class="btn c" style="width:100%;border-radius:14px;padding:12px" onclick="DB('${a}','add')">กู้เพิ่ม</button>
@@ -521,7 +524,7 @@ function ov(){
   });
   if(!dh)dh='<div class="mut" style="padding:4px 0">ยังไม่มีหนี้ที่บันทึกไว้</div>';
   dh+=`<div class="in"><b>＋ เพิ่มหนี้</b>${debtForm('o')}</div>`;
-  const dSumBox=dSm.length?`<div class="in" style="margin-top:10px"><b>📥 สรุปยอดกู้เพิ่มเดือนนี้</b><div class="mut">${plab(M)}</div>`+dSm.map(([n,v])=>`<div class="r"><span>🏦 ${esc(n)}</span><b style="color:${v>0?'#c0584a':'#8a8f98'}">${v>0?'+':''}${fmt2(v)}</b></div>`).join('')+`<div class="dv"></div><div class="r"><b>รวมทุกธนาคาร</b><b style="color:${allAdd>0?'#c0584a':'#8a8f98'}">${allAdd>0?'+':''}${fmt2(allAdd)}</b></div></div>`:'';
+  const dSumBox=dSm.length?`<div class="in" style="margin-top:10px"><b>📥 สรุปยอดกู้เพิ่มรอบนี้ (25 – 24)</b><div class="mut">${dcLab()}</div>`+dSm.map(([n,v])=>`<div class="r"><span>🏦 ${esc(n)}</span><b style="color:${v>0?'#c0584a':'#8a8f98'}">${v>0?'+':''}${fmt2(v)}</b></div>`).join('')+`<div class="dv"></div><div class="r"><b>รวมทุกธนาคาร</b><b style="color:${allAdd>0?'#c0584a':'#8a8f98'}">${allAdd>0?'+':''}${fmt2(allAdd)}</b></div></div>`:'';
   h+=band('bk',sec2('debt','Debt (แยกจากส่วนอื่น)','ใช้แล้วรวม '+fmt(allUsed),dh,'🏦','#e0897a','#fadfd7',dSumBox));
   return h;
 }
